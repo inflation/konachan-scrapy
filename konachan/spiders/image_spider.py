@@ -8,15 +8,12 @@ class ImageSpider(scrapy.Spider):
   ]
 
   def parse(self, response):
-    for href in response.css('.thumb::attr(href)').extract():
-      yield scrapy.Request(response.urljoin(href), callback=self.parse_detail)
+    yield {
+        'image_urls': [response.urljoin(url) for url in 
+            response.xpath('//a[contains(@class, "largeimg")]/@href').extract()]
+    }
 
-    next_page = response.css('a.next_page::attr(href)').extract_first()
+    next_page = response.xpath('//a[@class="next_page"]/@href').extract_first()
     if next_page is not None:
       next_page = response.urljoin(next_page)
       yield scrapy.Request(next_page, callback=self.parse)
-
-  def parse_detail(self, response):
-    yield {
-        'image_urls': [response.urljoin(response.css('.image::attr(src)').extract_first())],
-    }
